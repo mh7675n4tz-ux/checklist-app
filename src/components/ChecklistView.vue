@@ -20,7 +20,7 @@
           ref="renameInput"
           v-model="renameValue"
           type="text"
-          class="flex-1 text-xl font-bold border-b-2 border-indigo-500 bg-transparent focus:outline-none"
+          class="flex-1 min-w-0 text-xl font-bold border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           @blur="submitRename"
           @keydown.escape="editingName = false"
         />

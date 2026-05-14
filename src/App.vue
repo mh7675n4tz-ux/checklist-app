@@ -1,18 +1,21 @@
 <template>
-  <div class="flex h-screen bg-gray-50 text-gray-900">
+  <!-- h-dvh accounts for iOS Safari browser chrome; overflow-hidden + relative lets absolute children cover the viewport -->
+  <div class="relative flex h-dvh bg-gray-50 text-gray-900 overflow-hidden">
 
     <!-- Mobile backdrop -->
     <div
       v-if="drawerOpen"
-      class="fixed inset-0 bg-black/40 z-20 md:hidden"
+      class="absolute inset-0 bg-black/40 z-20 md:hidden"
       @click="drawerOpen = false"
     />
 
-    <!-- Sidebar -->
+    <!-- Sidebar
+         mobile: absolute (NOT fixed) so inputs inside don't get cursor-displaced by iOS keyboard
+         desktop: static in the flex row -->
     <aside
       :class="[
         'bg-white border-r border-gray-200 flex flex-col shrink-0 z-30 transition-transform duration-300',
-        'fixed inset-y-0 left-0 w-72 md:static md:w-64 md:translate-x-0',
+        'absolute inset-y-0 left-0 w-72 md:static md:w-64 md:translate-x-0',
         drawerOpen ? 'translate-x-0' : '-translate-x-full'
       ]"
     >
@@ -31,7 +34,7 @@
           :key="list.id"
           @click="selectList(list.id)"
           :class="[
-            'w-full text-left px-4 py-3 text-sm flex items-center justify-between group transition-colors',
+            'w-full text-left px-4 py-3 text-sm flex items-center justify-between transition-colors',
             activeListId === list.id
               ? 'bg-indigo-50 text-indigo-700 font-medium'
               : 'text-gray-700 hover:bg-gray-100'
@@ -50,7 +53,7 @@
             v-model="newListName"
             type="text"
             placeholder="New list name…"
-            class="flex-1 text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+            class="flex-1 min-w-0 text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
           />
           <button
             type="submit"
@@ -62,10 +65,10 @@
       </div>
     </aside>
 
-    <!-- Main content -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Main content — no overflow-hidden here (was clipping the sticky Add button) -->
+    <div class="flex-1 flex flex-col min-w-0">
 
-      <!-- Mobile top bar: hamburger | editable name | delete -->
+      <!-- Mobile top bar -->
       <header class="md:hidden flex items-center gap-2 px-3 py-2 bg-white border-b border-gray-200 shrink-0 min-h-[52px]">
         <button @click="drawerOpen = true" class="text-gray-500 p-2 -ml-1 shrink-0">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -74,29 +77,25 @@
         </button>
 
         <template v-if="activeList">
-          <!-- Inline rename form -->
-          <form v-if="mobileRenaming" @submit.prevent="submitMobileRename" class="flex-1 flex items-center gap-2">
+          <form v-if="mobileRenaming" @submit.prevent="submitMobileRename" class="flex-1 flex items-center gap-2 min-w-0">
             <input
               ref="mobileRenameInput"
               v-model="mobileRenameValue"
               type="text"
-              class="flex-1 font-semibold text-base bg-transparent border-b-2 border-indigo-500 focus:outline-none py-0.5"
-              @blur="submitMobileRename"
+              class="flex-1 min-w-0 font-semibold text-base border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400"
               @keydown.escape="mobileRenaming = false"
             />
-            <button type="submit" class="text-indigo-600 text-sm font-medium shrink-0">Done</button>
+            <button type="submit" class="shrink-0 text-indigo-600 text-sm font-medium px-1">Done</button>
           </form>
 
-          <!-- Name display (tap to rename) -->
           <button
             v-else
             @click="startMobileRename"
-            class="flex-1 text-left font-semibold text-base truncate"
+            class="flex-1 min-w-0 text-left font-semibold text-base truncate"
           >
             {{ activeList.name }}
           </button>
 
-          <!-- Delete list -->
           <button
             v-if="!mobileRenaming"
             @click="handleDeleteList"
@@ -158,11 +157,13 @@ function selectList(id) {
   drawerOpen.value = false
 }
 
-function handleCreateList() {
+async function handleCreateList() {
   const id = createList(newListName.value)
   if (id) {
-    activeListId.value = id
     newListName.value = ''
+    activeListId.value = id
+    // Wait for DOM update before closing so iOS doesn't race keyboard dismissal with drawer animation
+    await nextTick()
     drawerOpen.value = false
   }
 }
