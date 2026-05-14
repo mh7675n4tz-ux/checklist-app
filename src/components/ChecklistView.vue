@@ -1,12 +1,13 @@
 <template>
   <div class="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-    <!-- Header -->
-    <div class="flex items-start justify-between mb-6 gap-3">
+
+    <!-- Header — desktop only (mobile handled in App.vue top bar) -->
+    <div class="hidden md:flex items-center justify-between mb-6 gap-3">
       <div v-if="!editingName" class="flex items-center gap-2 min-w-0">
-        <h2 class="text-xl sm:text-2xl font-bold truncate hidden md:block">{{ list.name }}</h2>
+        <h2 class="text-2xl font-bold truncate">{{ list.name }}</h2>
         <button
           @click="startRename"
-          class="text-gray-400 hover:text-gray-600 shrink-0 p-1 hidden md:block"
+          class="text-gray-400 hover:text-gray-600 shrink-0 p-1"
           title="Rename list"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -14,36 +15,23 @@
           </svg>
         </button>
       </div>
-      <form v-if="editingName" @submit.prevent="submitRename" class="flex-1 flex gap-2">
+      <form v-else @submit.prevent="submitRename" class="flex-1 flex gap-2">
         <input
           ref="renameInput"
           v-model="renameValue"
           type="text"
-          class="flex-1 text-xl font-bold border-b-2 border-indigo-500 bg-transparent focus:outline-none"
+          class="flex-1 min-w-0 text-xl font-bold border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           @blur="submitRename"
           @keydown.escape="editingName = false"
         />
       </form>
 
-      <div class="flex items-center gap-2 shrink-0 ml-auto">
-        <span class="text-sm text-gray-500">
-          {{ checkedCount }}/{{ list.items.length }} done
-        </span>
-        <!-- Rename — mobile only (desktop uses inline pencil) -->
-        <button
-          @click="startRename"
-          class="md:hidden text-gray-400 hover:text-gray-600 p-1"
-          title="Rename list"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 013.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-        </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-sm text-gray-500">{{ checkedCount }}/{{ list.items.length }} done</span>
         <button
           v-if="checkedCount > 0"
           @click="$emit('clear-checked')"
-          class="text-xs text-gray-400 hover:text-red-500 transition-colors whitespace-nowrap"
-          title="Remove checked items"
+          class="text-xs text-gray-400 hover:text-red-500 transition-colors"
         >
           Clear checked
         </button>
@@ -60,11 +48,23 @@
     </div>
 
     <!-- Progress bar -->
-    <div v-if="list.items.length > 0" class="w-full bg-gray-200 rounded-full h-1.5 mb-6">
+    <div v-if="list.items.length > 0" class="w-full bg-gray-200 rounded-full h-1.5 mb-3">
       <div
         class="bg-indigo-500 h-1.5 rounded-full transition-all duration-300"
         :style="{ width: progressPercent + '%' }"
       />
+    </div>
+
+    <!-- Mobile stats + clear row -->
+    <div class="md:hidden flex items-center justify-between mb-4 text-sm text-gray-500">
+      <span>{{ checkedCount }}/{{ list.items.length }} done</span>
+      <button
+        v-if="checkedCount > 0"
+        @click="$emit('clear-checked')"
+        class="text-xs text-red-400 hover:text-red-600 transition-colors"
+      >
+        Clear checked
+      </button>
     </div>
 
     <!-- Items -->
@@ -74,14 +74,11 @@
         :key="item.id"
         class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white hover:shadow-sm transition-all group"
       >
-        <!-- Checkbox — larger hit area on mobile -->
         <button
           @click="$emit('toggle-item', item.id)"
           :class="[
             'w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
-            item.checked
-              ? 'bg-indigo-500 border-indigo-500'
-              : 'border-gray-300 hover:border-indigo-400'
+            item.checked ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300 hover:border-indigo-400'
           ]"
         >
           <svg v-if="item.checked" class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
@@ -96,7 +93,6 @@
           ]"
         >{{ item.text }}</span>
 
-        <!-- Delete: always visible on touch devices, hover-only on desktop -->
         <button
           @click="$emit('delete-item', item.id)"
           class="text-gray-300 hover:text-red-400 transition-all p-1
@@ -115,7 +111,7 @@
       <p class="text-sm">No items yet. Add one below!</p>
     </div>
 
-    <!-- Add item form — sticky on mobile so keyboard doesn't hide it -->
+    <!-- Add item form — sticky on mobile -->
     <form
       @submit.prevent="handleAdd"
       class="flex gap-2 sticky bottom-0 bg-gray-50 pt-2 pb-4 sm:pb-2 sm:static sm:bg-transparent sm:pt-0"
