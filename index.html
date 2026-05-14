@@ -4,9 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Checklist App</title>
+  <style>
+    /* Disable double-tap zoom */
+    * { touch-action: manipulation; }
+  </style>
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // Disable pinch zoom on iOS (user-scalable=no is ignored since iOS 10)
+      document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false })
+      document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false })
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
