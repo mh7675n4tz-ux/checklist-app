@@ -1,12 +1,12 @@
 <template>
-  <div class="max-w-2xl mx-auto px-6 py-8">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6 gap-3">
+    <div class="flex items-start justify-between mb-6 gap-3">
       <div v-if="!editingName" class="flex items-center gap-2 min-w-0">
-        <h2 class="text-2xl font-bold truncate">{{ list.name }}</h2>
+        <h2 class="text-xl sm:text-2xl font-bold truncate hidden md:block">{{ list.name }}</h2>
         <button
           @click="startRename"
-          class="text-gray-400 hover:text-gray-600 shrink-0"
+          class="text-gray-400 hover:text-gray-600 shrink-0 p-1 hidden md:block"
           title="Rename list"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -14,7 +14,7 @@
           </svg>
         </button>
       </div>
-      <form v-else @submit.prevent="submitRename" class="flex-1 flex gap-2">
+      <form v-if="editingName" @submit.prevent="submitRename" class="flex-1 flex gap-2">
         <input
           ref="renameInput"
           v-model="renameValue"
@@ -25,21 +25,31 @@
         />
       </form>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2 shrink-0 ml-auto">
         <span class="text-sm text-gray-500">
           {{ checkedCount }}/{{ list.items.length }} done
         </span>
+        <!-- Rename — mobile only (desktop uses inline pencil) -->
+        <button
+          @click="startRename"
+          class="md:hidden text-gray-400 hover:text-gray-600 p-1"
+          title="Rename list"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 013.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
         <button
           v-if="checkedCount > 0"
           @click="$emit('clear-checked')"
-          class="text-xs text-gray-400 hover:text-red-500 transition-colors"
+          class="text-xs text-gray-400 hover:text-red-500 transition-colors whitespace-nowrap"
           title="Remove checked items"
         >
           Clear checked
         </button>
         <button
           @click="confirmDelete"
-          class="text-gray-400 hover:text-red-500 transition-colors ml-1"
+          class="text-gray-400 hover:text-red-500 transition-colors p-1"
           title="Delete list"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -62,30 +72,35 @@
       <li
         v-for="item in list.items"
         :key="item.id"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white hover:shadow-sm transition-all group"
+        class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white hover:shadow-sm transition-all group"
       >
+        <!-- Checkbox — larger hit area on mobile -->
         <button
           @click="$emit('toggle-item', item.id)"
           :class="[
-            'w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+            'w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
             item.checked
               ? 'bg-indigo-500 border-indigo-500'
               : 'border-gray-300 hover:border-indigo-400'
           ]"
         >
-          <svg v-if="item.checked" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <svg v-if="item.checked" class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </button>
+
         <span
           :class="[
             'flex-1 text-sm transition-colors',
             item.checked ? 'line-through text-gray-400' : 'text-gray-800'
           ]"
         >{{ item.text }}</span>
+
+        <!-- Delete: always visible on touch devices, hover-only on desktop -->
         <button
           @click="$emit('delete-item', item.id)"
-          class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all"
+          class="text-gray-300 hover:text-red-400 transition-all p-1
+                 opacity-100 md:opacity-0 md:group-hover:opacity-100"
           title="Remove item"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -100,17 +115,20 @@
       <p class="text-sm">No items yet. Add one below!</p>
     </div>
 
-    <!-- Add item form -->
-    <form @submit.prevent="handleAdd" class="flex gap-2">
+    <!-- Add item form — sticky on mobile so keyboard doesn't hide it -->
+    <form
+      @submit.prevent="handleAdd"
+      class="flex gap-2 sticky bottom-0 bg-gray-50 pt-2 pb-4 sm:pb-2 sm:static sm:bg-transparent sm:pt-0"
+    >
       <input
         v-model="newItemText"
         type="text"
         placeholder="Add an item…"
-        class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+        class="flex-1 border border-gray-300 rounded-lg px-4 py-3 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
       />
       <button
         type="submit"
-        class="bg-indigo-600 text-white rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-indigo-700 transition-colors"
+        class="bg-indigo-600 text-white rounded-lg px-4 py-3 sm:py-2.5 text-sm font-medium hover:bg-indigo-700 transition-colors"
       >
         Add
       </button>
