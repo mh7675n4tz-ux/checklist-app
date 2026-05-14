@@ -63,7 +63,7 @@
         @click="$emit('clear-checked')"
         class="text-xs text-red-400 hover:text-red-600 transition-colors"
       >
-        Clear checked
+        Uncheck all
       </button>
     </div>
 
@@ -120,7 +120,7 @@
         v-model="newItemText"
         type="text"
         placeholder="Add an item…"
-        class="flex-1 border border-gray-300 rounded-lg px-4 py-3 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+        class="flex-1 border border-gray-300 rounded-lg px-4 py-3 sm:py-2.5 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
       />
       <button
         type="submit"
