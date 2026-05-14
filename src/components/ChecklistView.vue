@@ -33,7 +33,7 @@
           @click="$emit('clear-checked')"
           class="text-xs text-gray-400 hover:text-red-500 transition-colors"
         >
-          Clear checked
+          Uncheck all
         </button>
         <button
           @click="confirmDelete"

@@ -62,7 +62,7 @@ export function useChecklists() {
 
   function clearChecked(listId) {
     const list = lists.value.find(l => l.id === listId)
-    if (list) list.items = list.items.filter(i => !i.checked)
+    if (list) list.items.forEach(i => { i.checked = false })
   }
 
   return { lists, createList, deleteList, renameList, addItem, toggleItem, deleteItem, clearChecked }
