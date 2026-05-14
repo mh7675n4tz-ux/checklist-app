@@ -8,7 +8,7 @@
       @click="drawerOpen = false"
     />
 
-    <!-- Sidebar (desktop: static | mobile: slide-in drawer) -->
+    <!-- Sidebar -->
     <aside
       :class="[
         'bg-white border-r border-gray-200 flex flex-col shrink-0 z-30 transition-transform duration-300',
@@ -44,7 +44,6 @@
         </button>
       </nav>
 
-      <!-- New list form -->
       <div class="px-4 py-3 border-t border-gray-200">
         <form @submit.prevent="handleCreateList" class="flex gap-2">
           <input
@@ -66,14 +65,51 @@
     <!-- Main content -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-      <!-- Mobile top bar -->
-      <header class="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-        <button @click="drawerOpen = true" class="text-gray-500 hover:text-gray-700 p-1 -ml-1">
+      <!-- Mobile top bar: hamburger | editable name | delete -->
+      <header class="md:hidden flex items-center gap-2 px-3 py-2 bg-white border-b border-gray-200 shrink-0 min-h-[52px]">
+        <button @click="drawerOpen = true" class="text-gray-500 p-2 -ml-1 shrink-0">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span class="font-semibold text-base truncate">{{ activeList?.name ?? 'My Checklists' }}</span>
+
+        <template v-if="activeList">
+          <!-- Inline rename form -->
+          <form v-if="mobileRenaming" @submit.prevent="submitMobileRename" class="flex-1 flex items-center gap-2">
+            <input
+              ref="mobileRenameInput"
+              v-model="mobileRenameValue"
+              type="text"
+              class="flex-1 font-semibold text-base bg-transparent border-b-2 border-indigo-500 focus:outline-none py-0.5"
+              @blur="submitMobileRename"
+              @keydown.escape="mobileRenaming = false"
+            />
+            <button type="submit" class="text-indigo-600 text-sm font-medium shrink-0">Done</button>
+          </form>
+
+          <!-- Name display (tap to rename) -->
+          <button
+            v-else
+            @click="startMobileRename"
+            class="flex-1 text-left font-semibold text-base truncate"
+          >
+            {{ activeList.name }}
+          </button>
+
+          <!-- Delete list -->
+          <button
+            v-if="!mobileRenaming"
+            @click="handleDeleteList"
+            class="text-gray-400 hover:text-red-500 p-2 shrink-0 transition-colors"
+            title="Delete list"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </template>
+
+        <span v-else class="font-semibold text-base text-gray-400">My Checklists</span>
       </header>
 
       <main class="flex-1 overflow-y-auto">
@@ -101,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useChecklists } from './composables/useChecklists.js'
 import ChecklistView from './components/ChecklistView.vue'
 
@@ -110,6 +146,10 @@ const { lists, createList, deleteList, renameList, addItem, toggleItem, deleteIt
 const activeListId = ref(lists.value[0]?.id ?? null)
 const newListName = ref('')
 const drawerOpen = ref(false)
+
+const mobileRenaming = ref(false)
+const mobileRenameValue = ref('')
+const mobileRenameInput = ref(null)
 
 const activeList = computed(() => lists.value.find(l => l.id === activeListId.value) ?? null)
 
@@ -128,8 +168,23 @@ function handleCreateList() {
 }
 
 function handleDeleteList() {
+  if (!confirm(`Delete "${activeList.value?.name}"? This cannot be undone.`)) return
   const idx = lists.value.findIndex(l => l.id === activeListId.value)
   deleteList(activeListId.value)
   activeListId.value = lists.value[Math.max(0, idx - 1)]?.id ?? null
+}
+
+async function startMobileRename() {
+  mobileRenameValue.value = activeList.value?.name ?? ''
+  mobileRenaming.value = true
+  await nextTick()
+  mobileRenameInput.value?.focus()
+  mobileRenameInput.value?.select()
+}
+
+function submitMobileRename() {
+  const trimmed = mobileRenameValue.value.trim()
+  if (trimmed && activeList.value) renameList(activeListId.value, trimmed)
+  mobileRenaming.value = false
 }
 </script>
