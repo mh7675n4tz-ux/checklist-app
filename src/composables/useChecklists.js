@@ -65,5 +65,34 @@ export function useChecklists() {
     if (list) list.items.forEach(i => { i.checked = false })
   }
 
-  return { lists, createList, deleteList, renameList, addItem, toggleItem, deleteItem, clearChecked }
+  function exportData() {
+    const payload = JSON.stringify({ version: 1, lists: lists.value }, null, 2)
+    const blob = new Blob([payload], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `checklists-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function importData(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result)
+          if (!Array.isArray(parsed?.lists)) throw new Error('Invalid file format')
+          lists.value = parsed.lists
+          resolve(parsed.lists.length)
+        } catch (err) {
+          reject(err)
+        }
+      }
+      reader.onerror = () => reject(new Error('Could not read file'))
+      reader.readAsText(file)
+    })
+  }
+
+  return { lists, createList, deleteList, renameList, addItem, toggleItem, deleteItem, clearChecked, exportData, importData }
 }
