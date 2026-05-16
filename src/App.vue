@@ -47,7 +47,7 @@
         </button>
       </nav>
 
-      <div class="px-4 py-3 border-t border-gray-200">
+      <div class="px-4 py-3 border-t border-gray-200 space-y-2">
         <form @submit.prevent="handleCreateList" class="flex gap-2">
           <input
             v-model="newListName"
@@ -62,6 +62,34 @@
             Add
           </button>
         </form>
+
+        <!-- Import / Export -->
+        <div class="flex gap-2">
+          <button
+            @click="handleExport"
+            class="flex-1 flex items-center justify-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-md py-1.5 transition-colors hover:bg-gray-50"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export
+          </button>
+          <button
+            @click="triggerImport"
+            class="flex-1 flex items-center justify-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-md py-1.5 transition-colors hover:bg-gray-50"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            Import
+          </button>
+          <input ref="importInput" type="file" accept=".json" class="hidden" @change="handleImport" />
+        </div>
+
+        <!-- Import feedback -->
+        <p v-if="importMessage" :class="['text-xs text-center transition-opacity', importError ? 'text-red-500' : 'text-green-600']">
+          {{ importMessage }}
+        </p>
       </div>
     </aside>
 
@@ -140,11 +168,16 @@ import { ref, computed, nextTick } from 'vue'
 import { useChecklists } from './composables/useChecklists.js'
 import ChecklistView from './components/ChecklistView.vue'
 
-const { lists, createList, deleteList, renameList, addItem, toggleItem, deleteItem, clearChecked } = useChecklists()
+const { lists, createList, deleteList, renameList, addItem, toggleItem, deleteItem, clearChecked, exportData, importData } = useChecklists()
 
 const activeListId = ref(lists.value[0]?.id ?? null)
 const newListName = ref('')
 const drawerOpen = ref(false)
+
+const importInput = ref(null)
+const importMessage = ref('')
+const importError = ref(false)
+let importMessageTimer = null
 
 const mobileRenaming = ref(false)
 const mobileRenameValue = ref('')
@@ -181,6 +214,31 @@ async function startMobileRename() {
   await nextTick()
   mobileRenameInput.value?.focus()
   mobileRenameInput.value?.select()
+}
+
+function handleExport() {
+  exportData()
+}
+
+function triggerImport() {
+  importInput.value.value = ''
+  importInput.value.click()
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  clearTimeout(importMessageTimer)
+  try {
+    const count = await importData(file)
+    activeListId.value = lists.value[0]?.id ?? null
+    importError.value = false
+    importMessage.value = `Imported ${count} list${count !== 1 ? 's' : ''}`
+  } catch {
+    importError.value = true
+    importMessage.value = 'Invalid file — import failed'
+  }
+  importMessageTimer = setTimeout(() => { importMessage.value = '' }, 3000)
 }
 
 function submitMobileRename() {
